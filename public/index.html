@@ -1,0 +1,99 @@
+<html ng-app="demo">
+<head>
+<title>Sample App</title>
+<!-- Add JQuery + Bootstrap JS / CSS + AngularJS-->
+<script src="vendor/jquery/jquery.js"></script>
+<script src="vendor/bootstrap/js/bootstrap.js"></script>
+<link rel="stylesheet" type="text/css"
+	href="vendor/bootstrap/css/bootstrap.css">
+<script src="vendor/angular/angular.js"></script>
+<script src="vendor/angular/angular-route.js"></script>
+<!-- Our Script -->
+<script>
+	var demoApp = angular.module('demo', []);
+	demoApp.controller('MainController', [ '$scope', 'todoWebService', function($scope, todoWebService) {
+		// Setup a view model
+		var vm = {};
+		
+		vm.list = [];
+		
+		// Start the initial load of lists
+		todoWebService.getItems().then(function (response) {
+			vm.list = response.data.items;
+		});
+		
+		vm.addItem = function () {
+			var item = {
+				details: vm.newItemDetails
+			};
+			
+			// Clear it from the UI
+			vm.newItemDetails = '';
+			
+			// Send the request to the server and add the item once done
+			todoWebService.addItem(item).then(function (response) {
+				vm.list.push({
+				_id: response.data.itemId,
+				details: item.details
+				});
+			});
+		};
+		
+		vm.removeItem = function (itemToRemove) {
+			// Remove it from the list and send the server request
+			vm.list = vm.list.filter(function (item) { 
+				return item._id !== itemToRemove._id; 
+			});
+			
+			todoWebService.removeItem(itemToRemove);
+		};
+			
+		// For new items:
+		vm.newItemDetails = '';
+		
+		// expose the vm using the $scope
+		$scope.vm = vm;
+	}]);
+		
+	demoApp.service('todoWebService', ['$http', function ($http) {
+		var root = '/todo';
+		return {
+			getItems: function () {
+				return $http.get(root);
+			},
+			addItem: function (item) {
+				return $http.post(root, item);
+			},
+			removeItem: function (item) {
+				return $http.delete(root + '/' + item._id);
+			}
+		}
+	}]);
+</script>
+</head>
+<body ng-controller="MainController">
+	<!-- Our HTML -->
+	<div class="container">
+		<h1>List</h1>
+		<!-- Existing items rows -->
+		<div class="row">
+			<div ng-repeat="item in vm.list" style="padding: 10px">
+				<button class="btn btn-danger" ng-click="vm.removeItem(item)">x</button>
+				{{item.details}}
+			</div>
+		</div>
+		<!-- New Item row -->
+		<div class="row">
+			<form role="form">
+				<div class="form-group">
+					<label for="newItemDetails">New Item Details:</label> <input
+						type="text" class="form-control"
+						placeholder="Details of new todo item"
+						ng-model="vm.newItemDetails">
+				</div>
+				<button type="submit" class="btn btn-primary"
+					ng-click="vm.addItem()" ng-disabled="!vm.newItemDetails">Add</button>
+			</form>
+		</div>
+	</div>
+</body>

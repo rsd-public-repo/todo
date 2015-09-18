@@ -1,0 +1,4 @@
+stream http responses
+timeout on mongodb connection
+incapsulate mongodb specific logic into moongoose item objects
+handle mongodb connection/disconnection
